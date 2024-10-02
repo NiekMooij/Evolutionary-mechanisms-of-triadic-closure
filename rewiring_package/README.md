@@ -9,6 +9,7 @@ This Python package provides code for the rewiring project.
 
 - [Features](#features)
 - [Installation](#installation)
+- [Example](#Example)
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [License](#license)

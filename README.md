@@ -1,14 +1,14 @@
 ## Overview
 
-This Github directory contains all the codes used for the paper "Stable coexistence in indefinitely large systems of competing species".
+This Github directory contains all the codes used for the paper "Evolutionary mechanisms of triadic closure".
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python Version](https://img.shields.io/badge/python-3.6%2B-blue.svg)](https://www.python.org/downloads/)
 
 ## Table of Contents
-
-- [Simulations](#Simulations)
 - [Figures](#Figures)
+- [rewiring_package](#rewiring_package)
+- [Simulations](#Simulations)
 
 ## Simulations
 This folder contains all scripts regarding the performed simulations on binomially distributed graphs.

@@ -7,8 +7,8 @@ This Github directory contains all the codes used for the paper "Evolutionary me
 
 ## Table of Contents
 - [Figures](#Figures)
-- [rewiring_package](#rewiring_package)
 - [Simulations](#Simulations)
+- [rewiring_package](#rewiring_package)
 
 ## Simulations
 This folder contains all scripts regarding the performed simulations on binomially distributed graphs.

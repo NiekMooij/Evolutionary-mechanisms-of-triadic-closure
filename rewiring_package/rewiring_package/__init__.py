@@ -16,6 +16,7 @@ from .rewire import rewired_graph
 from .rewire import accept_rewire
 from .rewire import rewire_iteration
 from .rewire import network_cycle
+from .optimise_clustering import optimise_clustering
 
 # Define the __all__ variable to specify what should be imported when using "from my_package import *".
 __all__ = [
@@ -31,5 +32,6 @@ __all__ = [
             'rewired_graph',
             'accept_rewire',
             'rewire_iteration',
-            'network_cycle'
+            'network_cycle',
+            'optimise_clustering'
            ]

@@ -68,7 +68,7 @@ def rewired_graph(G, max_attempts=1000):
     print('No potential rewiring found!')
     return False
 
-def accept_rewire(G, G_rewired, T, optimise=True):
+def accept_rewire(tau_old, G_rewired, T, optimise=True):
     """
     Determines whether to accept the rewiring based on the Metropolis criterion.
 
@@ -83,10 +83,9 @@ def accept_rewire(G, G_rewired, T, optimise=True):
     tolerance = 1e-8
     tau_initial = 1e-20
     
-    tau, _ = get_first_bifurcation(G=G, tau_initial=tau_initial, tolerance=tolerance)
     tau_rewired, _ = get_first_bifurcation(G=G_rewired, tau_initial=tau_initial, tolerance=tolerance)
 
-    diff = tau_rewired - tau
+    diff = tau_rewired - tau_old
 
     if optimise:
         if diff > 0:
@@ -94,11 +93,11 @@ def accept_rewire(G, G_rewired, T, optimise=True):
         
         else:
             if T == 0:
-                return False, tau
+                return False, tau_old
             elif np.random.uniform(0, 1) < np.exp(diff / T):
                 return True, tau_rewired
             else:
-                return False, tau
+                return False, tau_old
             
     else:
         if diff < 0:
@@ -106,11 +105,11 @@ def accept_rewire(G, G_rewired, T, optimise=True):
         
         else:
             if T == 0:
-                return False, tau
-            elif np.random.uniform(0, 1) < np.exp(abs(diff) / T):
+                return False, tau_old
+            elif np.random.uniform(0, 1) < np.exp(-diff / T):
                 return True, tau_rewired
             else:
-                return False, tau
+                return False, tau_old
 
 def rewire_iteration(G, tau_old, T=2.1, optimise=True):
     """
@@ -127,7 +126,7 @@ def rewire_iteration(G, tau_old, T=2.1, optimise=True):
 
     if G_rewired:
         # print(accept_rewire(G, G_rewired, T))
-        flag, tau = accept_rewire(G, G_rewired, T, optimise=optimise)
+        flag, tau = accept_rewire(tau_old=tau_old, G_rewired=G_rewired, T=T, optimise=optimise)
     
         if flag:
             return True, G_rewired, tau

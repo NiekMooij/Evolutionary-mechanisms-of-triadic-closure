@@ -9,7 +9,6 @@ This Python package provides code for the rewiring project.
 
 - [Features](#features)
 - [Installation](#installation)
-- [Example](#Example)
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [License](#license)
@@ -23,8 +22,7 @@ This Python package provides code for the rewiring project.
 You can install the package using pip:
 
 ```bash
-pip install git+https://github.com/NiekMooij/rewiring_project.git
-import rewiring_package as rp
+pip install rewiring_project
 ```
 
 ## Example

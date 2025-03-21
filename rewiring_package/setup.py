@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='rewiring_project',
-    version='1.0.0',
+    version='1.0.2',
     author='Niek Mooij',
     author_email='mooij.niek@gmail.com',
     description='All code used in the rewiring project.',
@@ -30,7 +30,8 @@ setup(
             'rewired_graph=rewiring_project.rewire.rewired_graph:main',
             'accept_rewire=rewiring_project.rewire.accept_rewire:main',
             'rewire_iteration=rewiring_project.rewire.rewire_iteration:main',
-            'network_cycle=rewiring_project.rewire.network_cycle:main'           
+            'network_cycle=rewiring_project.rewire.network_cycle:main',
+            'optimise_clustering=rewiring_project.optimise_clustering.optimise_clustering:main'    
         ]
         ,
     },

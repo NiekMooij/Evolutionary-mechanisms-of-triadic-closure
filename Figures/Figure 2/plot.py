@@ -1,137 +1,126 @@
-import networkx as nx
-import numpy as np
 import os
 import sys
 import pickle
+from typing import Dict, Any
+
+import numpy as np
 import matplotlib.pyplot as plt
 
-import rewiring_package as rp
-from sklearn.linear_model import LinearRegression
-                
-def load_data(load_name):
-    with open(load_name, 'rb') as f:
-        data_dict = pickle.load(f)
-    return data_dict
+from typing import Dict, Any
 
-def save_data(folder, data_dict):
-    with open(folder, 'wb') as f:
-        pickle.dump(data_dict, f)
+def load_data(path: str) -> Dict[str, Any]:
+    """
+    Load a pickled data dictionary from disk.
+    """
+    with open(path, 'rb') as f:
+        return pickle.load(f)
 
-if __name__ == "__main__":
-    iterations = 100
 
-    fig, ((ax1, ax2, ax3, ax4), (ax5, ax6, ax7, ax8)) = plt.subplots(nrows=2, ncols=4, figsize=(14, 6))
+def save_figures(output_dir: str) -> None:
+    """
+    Create and save the clustering vs tau and assortativity plots for various network types.
+    """
+    # Create a 2x5 grid of subplots with axes in increasing order
+    fig, axes = plt.subplots(nrows=2, ncols=5, figsize=(18, 6))
     fig.subplots_adjust(wspace=0.5, hspace=0.5)
-    
-    for ax, label in zip([ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8], ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']):
-        ax.text(-0.1, 1.1, label, transform=ax.transAxes, 
+    axes_flat = axes.flatten()
+
+    # Label panels a–j
+    for ax, label in zip(axes_flat, [chr(ord('a') + i) for i in range(10)]):
+        ax.text(-0.1, 1.15, label, transform=ax.transAxes,
                 fontsize=16, va='top', ha='right')
 
-    # Axis 1
-    ax1.set_title('Poisson', fontsize=14)
-    file_path = os.path.join(sys.path[0], f'data/data_dict_erdos_renyi.pkl')
-    data_dict = load_data(file_path)['clustering']
-    ax1.errorbar(data_dict['bin_centers'], data_dict['bin_means'], yerr=data_dict['bin_stds'], fmt='o', color='black', ecolor='black', elinewidth=1, capsize=2, capthick=1, zorder=1000, markeredgecolor='black')
-    label = f'y={np.round(data_dict['slope'],3)}x + {np.round(data_dict['intercept'],3)}'
-    ax1.plot(data_dict['bin_centers'], data_dict['slope']*data_dict['bin_centers'] + data_dict['intercept'], color='red', linewidth=2, label=label)
-    
-    ax1.set_xlabel('Clustering', fontsize=12)
-    ax1.set_ylabel('Critical coupling', fontsize=12)
-    ax1.tick_params(axis='both', which='major', labelsize=11)
-    ax1.legend(fancybox=False, fontsize=8, loc='upper left', facecolor='white', edgecolor='black')
+    network_info = [
+        ('erdos_renyi', 'Poisson'),
+        ('random_regular', 'Regular'),
+        ('random_geometric', 'Geometric'),
+        ('watts_strogatz', 'Watts-Strogatz'),
+        ('barabasi_albert', 'Barabasi-Albert')
+    ]
 
-    # Axis 5
-    file_path = os.path.join(sys.path[0], f'data/data_dict_erdos_renyi.pkl')
-    data_dict = load_data(file_path)['assortativity_standard']
-    ax5.errorbar(data_dict['bin_centers'], data_dict['bin_means'], yerr=data_dict['bin_stds'], fmt='o', color='black', ecolor='black', elinewidth=1, capsize=2, capthick=1, zorder=1000, markeredgecolor='black')
-    label = f'y={np.round(data_dict['slope'],3)}x + {np.round(data_dict['intercept'],3)}'
-    ax5.plot(data_dict['bin_centers'], data_dict['slope']*data_dict['bin_centers'] + data_dict['intercept'], color='red', linewidth=2, label=label)
-    
-    ax5.set_xlabel('Assortativity', fontsize=12)
-    ax5.set_ylabel('Critical coupling', fontsize=12)
-    ax5.tick_params(axis='both', which='major', labelsize=11)
-    ax5.legend(fancybox=False, fontsize=8, loc='upper left', facecolor='white', edgecolor='black')
+    for idx, (net_key, title) in enumerate(network_info):
+        # clustering axis
+        ax_clust = axes_flat[idx]
+        ax_clust.set_title(title, fontsize=14)
+        ax_clust.set_xlabel('Clustering', fontsize=12)
+        ax_clust.set_ylabel(r'Critical coupling $\tau_c$', fontsize=12)
+        ax_clust.tick_params(axis='both', which='major', labelsize=11)
 
-    # Axis 2
-    ax2.set_title('Regular', fontsize=14)
-    file_path = os.path.join(sys.path[0], f'data/data_dict_random_regular.pkl')
-    data_dict = load_data(file_path)['clustering']
-    ax2.errorbar(data_dict['bin_centers'], data_dict['bin_means'], yerr=data_dict['bin_stds'], fmt='o', color='black', ecolor='black', elinewidth=1, capsize=2, capthick=1, zorder=1000, markeredgecolor='black')
-    label = f'y={np.round(data_dict['slope'],3)}x + {np.round(data_dict['intercept'],3)}'
-    ax2.plot(data_dict['bin_centers'], data_dict['slope']*data_dict['bin_centers'] + data_dict['intercept'], color='red', linewidth=2, label=label)
-    
-    ax2.set_xlabel('Clustering', fontsize=12)
-    ax2.set_ylabel('Critical coupling', fontsize=12)
-    ax2.tick_params(axis='both', which='major', labelsize=11)
-    ax2.legend(fancybox=False, fontsize=8, loc='upper left', facecolor='white', edgecolor='black')
+        # assortativity axis
+        ax_assort = axes_flat[idx + 5]
+        ax_assort.set_xlabel('Assortativity', fontsize=12)
+        ax_assort.set_ylabel(r'Critical coupling $\tau_c$', fontsize=12)
+        ax_assort.tick_params(axis='both', which='major', labelsize=11)
 
-    # Axis 6
-    file_path = os.path.join(sys.path[0], f'data/data_dict_random_regular.pkl')
-    data_dict = load_data(file_path)['assortativity']
-    # ax6.errorbar(data_dict['bin_centers'], data_dict['bin_means'], yerr=data_dict['bin_stds'], fmt='o', color='black', ecolor='black', elinewidth=1, capsize=2, capthick=1, zorder=1000, markeredgecolor='black')
-    # label = f'y={np.round(data_dict['slope'],3)}x + {np.round(data_dict['intercept'],3)}'
-    # ax6.plot(data_dict['bin_centers'], data_dict['slope']*data_dict['bin_centers'] + data_dict['intercept'], color='red', linewidth=2, label=label)
-    
-    ax6.set_xlabel('Assortativity', fontsize=12)
-    ax6.set_ylabel('Critical coupling', fontsize=12)
-    ax6.set_xticks([], [])
-    ax6.set_yticks([], [])
-    ax6.tick_params(axis='both', which='major', labelsize=11)
-    # ax6.legend(fancybox=False, fontsize=8, loc='upper left', facecolor='white', edgecolor='black')
-    ax6.text(0.5, 0.5, 'NA', transform=ax6.transAxes, fontsize=16, va='center', ha='center')
+        # Load data
+        data = load_data(os.path.join(output_dir, f'data/data_dict_{net_key}.pkl'))['clustering']
+        # Clustering plot
+        ax_clust.errorbar(
+            data['bin_centers'], data['bin_means'],
+            yerr=3 * np.array(data['bin_std_error']),
+            fmt='o', ecolor='black', elinewidth=1,
+            capsize=2, capthick=1, zorder=1000,
+            markeredgecolor='black', markersize=8, markerfacecolor='blue'
+        )
+        if net_key != 'barabasi_albert':
+            label = f"y={data['slope']:.3f}x + {data['intercept']:.3f}"
+            ax_clust.plot(
+                data['bin_centers'],
+                data['slope'] * data['bin_centers'] + data['intercept'],
+                color='red', linewidth=2, label=label
+            )
+            ax_clust.text(
+                0.95, 0.05, f"$R^2={data['r_squared']:.3f}$",
+                transform=ax_clust.transAxes,
+                fontsize=10, va='bottom', ha='right'
+            )
+            ax_clust.legend(fancybox=False, fontsize=8,
+                            loc='upper left', facecolor='white',
+                            edgecolor='black')
 
-    # Axis 3
-    ax3.set_title('Geometric', fontsize=14)
-    file_path = os.path.join(sys.path[0], f'data/data_dict_random_geometric.pkl')
-    data_dict = load_data(file_path)['clustering']
-    ax3.errorbar(data_dict['bin_centers'], data_dict['bin_means'], yerr=data_dict['bin_stds'], fmt='o', color='black', ecolor='black', elinewidth=1, capsize=2, capthick=1, zorder=1000, markeredgecolor='black')
-    label = f'y={np.round(data_dict['slope'],3)}x + {np.round(data_dict['intercept'],3)}'
-    ax3.plot(data_dict['bin_centers'], data_dict['slope']*data_dict['bin_centers'] + data_dict['intercept'], color='red', linewidth=2, label=label)
+        # Assortativity
+        if net_key == 'random_regular':
+            # leave empty but keep axes and labels
+            ax_assort.text(0.5, 0.5, 'NA', transform=ax_assort.transAxes,
+                           fontsize=16, va='center', ha='center')
+            continue
     
-    ax3.set_xlabel('Clustering', fontsize=12)
-    ax3.set_ylabel('Critical coupling', fontsize=12)
-    ax3.tick_params(axis='both', which='major', labelsize=11)
-    ax3.legend(fancybox=False, fontsize=8, loc='upper left', facecolor='white', edgecolor='black')
+        data_a = load_data(os.path.join(output_dir, f'data/data_dict_{net_key}.pkl'))['assortativity_standard']
+        ax_assort.errorbar(
+            data_a['bin_centers'], data_a['bin_means'],
+            yerr=3 * np.array(data_a['bin_std_error']),
+            fmt='^', ecolor='black', elinewidth=1,
+            capsize=2, capthick=1, zorder=1000,
+            markeredgecolor='black', markersize=10, markerfacecolor='orange'
+        )
+        label_a = f"y={data_a['slope']:.3f}x + {data_a['intercept']:.3f}"
+        ax_assort.plot(
+            data_a['bin_centers'],
+            data_a['slope'] * data_a['bin_centers'] + data_a['intercept'],
+            color='red', linewidth=2, label=label_a
+        )
+        ax_assort.text(
+            0.95, 0.05, f"$R^2={data_a['r_squared']:.3f}$",
+            transform=ax_assort.transAxes,
+            fontsize=10, va='bottom', ha='right'
+        )
+        ax_assort.legend(fancybox=False, fontsize=8,
+                        loc='upper left', facecolor='white',
+                        edgecolor='black')
 
-    # Axis 7
-    file_path = os.path.join(sys.path[0], f'data/data_dict_random_geometric.pkl')
-    data_dict = load_data(file_path)['assortativity_standard']
-    ax7.errorbar(data_dict['bin_centers'], data_dict['bin_means'], yerr=data_dict['bin_stds'], fmt='o', color='black', ecolor='black', elinewidth=1, capsize=2, capthick=1, zorder=1000, markeredgecolor='black')
-    label = f'y={np.round(data_dict['slope'],3)}x + {np.round(data_dict['intercept'],3)}'
-    ax7.plot(data_dict['bin_centers'], data_dict['slope']*data_dict['bin_centers'] + data_dict['intercept'], color='red', linewidth=2, label=label)
-    
-    ax7.set_xlabel('Assortativity', fontsize=12)
-    ax7.set_ylabel('Critical coupling', fontsize=12)
-    ax7.tick_params(axis='both', which='major', labelsize=11)
-    ax7.legend(fancybox=False, fontsize=8, loc='upper left', facecolor='white', edgecolor='black')
+    # Save
+    fig_dir = os.path.join(output_dir, 'figures')
+    os.makedirs(fig_dir, exist_ok=True)
+    for ext in ['pdf', 'png']:
+        out_path = os.path.join(fig_dir, f'clustering_vs_tau.{ext}')
+        plt.savefig(out_path, format=ext, bbox_inches='tight',
+                    dpi=300, transparent=True, pad_inches=0.01)
+    plt.show()()
 
-    # Axis 4
-    ax4.set_title('Watts-Strogatz', fontsize=14)
-    file_path = os.path.join(sys.path[0], f'data/data_dict_watts_strogatz.pkl')
-    data_dict = load_data(file_path)['clustering']
-    ax4.errorbar(data_dict['bin_centers'], data_dict['bin_means'], yerr=data_dict['bin_stds'], fmt='o', color='black', ecolor='black', elinewidth=1, capsize=2, capthick=1, zorder=1000, markeredgecolor='black')
-    label = f'y={np.round(data_dict['slope'],3)}x + {np.round(data_dict['intercept'],3)}'
-    ax4.plot(data_dict['bin_centers'], data_dict['slope']*data_dict['bin_centers'] + data_dict['intercept'], color='red', linewidth=2, label=label)
-    
-    ax4.set_xlabel('Clustering', fontsize=12)
-    ax4.set_ylabel('Critical coupling', fontsize=12)
-    ax4.tick_params(axis='both', which='major', labelsize=11)
-    ax4.legend(fancybox=False, fontsize=8, loc='upper left', facecolor='white', edgecolor='black')
 
-    # Axis 8
-    file_path = os.path.join(sys.path[0], f'data/data_dict_watts_strogatz.pkl')
-    data_dict = load_data(file_path)['assortativity_standard']
-    ax8.errorbar(data_dict['bin_centers'], data_dict['bin_means'], yerr=data_dict['bin_stds'], fmt='o', color='black', ecolor='black', elinewidth=1, capsize=2, capthick=1, zorder=1000, markeredgecolor='black')
-    label = f'y={np.round(data_dict['slope'],3)}x + {np.round(data_dict['intercept'],3)}'
-    ax8.plot(data_dict['bin_centers'], data_dict['slope']*data_dict['bin_centers'] + data_dict['intercept'], color='red', linewidth=2, label=label)
-    
-    ax8.set_xlabel('Assortativity', fontsize=12)
-    ax8.set_ylabel('Critical coupling', fontsize=12)
-    ax8.tick_params(axis='both', which='major', labelsize=11)
-    ax8.legend(fancybox=False, fontsize=8, loc='upper left', facecolor='white', edgecolor='black')
+def main():
+    save_figures(sys.path[0])
 
-    save_name = os.path.join(sys.path[0], 'figures/clustering_vs_tau.pdf')
-    plt.savefig(save_name, format='pdf', bbox_inches='tight', dpi=300, transparent=True, pad_inches=0.01)
-    save_name = os.path.join(sys.path[0], 'figures/clustering_vs_tau.png')
-    plt.savefig(save_name, format='png', bbox_inches='tight', dpi=300, transparent=True, pad_inches=0.01)
-    plt.show()
+
+if __name__ == '__main__':
+    main()

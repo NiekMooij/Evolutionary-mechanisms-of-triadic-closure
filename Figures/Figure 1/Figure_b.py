@@ -39,7 +39,7 @@ cud_palette = [
 ]
 markers = ['s', 'o', '^', 'X', 'p', 'P']
 edgecolor = 'black'
-line_width = 2.5
+line_width = 4.5
 x = np.arange(1001)
 marker_size = 80
 marker_linewidth = 0.3
@@ -84,7 +84,7 @@ for ax in [ax1, ax2, ax3, ax4]:
     ax.set_xlim(-2, 2)
     ax.set_ylim(-2, 2)
 
-nx.draw(clique_2, ax=ax1, with_labels=False, node_color=cud_palette[0], node_size=500, edgecolors=edgecolor, width=line_width, linewidths=2)
+nx.draw(clique_2, ax=ax1, with_labels=False, node_color=cud_palette[0], node_size=500, edgecolors=edgecolor, width=line_width, linewidths=2, )
 nx.draw(clique_3, ax=ax2, with_labels=False, node_color=cud_palette[1], node_size=500, edgecolors=edgecolor, width=line_width, linewidths=2)
 nx.draw(clique_4, ax=ax3, with_labels=False, node_color=cud_palette[2], node_size=500, edgecolors=edgecolor, width=line_width, linewidths=2)
 nx.draw(clique_5, ax=ax4, with_labels=False, node_color=cud_palette[3], node_size=500, edgecolors=edgecolor, width=line_width, linewidths=2)

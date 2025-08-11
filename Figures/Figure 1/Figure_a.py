@@ -36,6 +36,9 @@ edges_start = data['edges'][-1]
 G = nx.Graph()
 G.add_edges_from(edges_start)
 
+print(len(edges_start))
+exit()
+
 node_colors = []
 for node in G:
     if G.degree(node) == 1:
@@ -53,7 +56,38 @@ for node in G:
 
 pos = nx.spring_layout(G)
 
-nx.draw(G, pos=pos, ax=ax, with_labels=False, node_color=node_colors, node_size=500, edgecolors=edgecolor, width=line_width)
+# --- Make triangle edges thicker ---
+triangle_edges = set()
+for u, v in G.edges():
+    # If u and v have any common neighbor, edge (u,v) is part of a triangle
+    if set(G.neighbors(u)).intersection(G.neighbors(v)):
+        triangle_edges.add(frozenset((u, v)))
+
+edges = list(G.edges())
+triangle_line_width = 4.5  # thicker width for triangle edges
+edge_widths = [
+    triangle_line_width if frozenset(e) in triangle_edges else line_width
+    for e in edges
+]
+# --- end triangle-thickening block ---
+triangle_edge_color = 'black'
+non_triangle_edge_color = (0, 0, 0, 0.65)  # RGBA with lower alpha for transparency
+edge_colors = [
+    triangle_edge_color if frozenset(e) in triangle_edges else non_triangle_edge_color
+    for e in edges]
+
+nx.draw(
+    G,
+    pos=pos,
+    ax=ax,
+    with_labels=False,
+    node_color=node_colors,
+    node_size=500,
+    edgelist=edges,              # ensure width order matches these edges
+    width=edge_widths,           # thicker for triangle edges
+    edgecolors=edgecolor,
+    edge_color=edge_colors       # set the color of the edges
+)
 
 save_name = os.path.join(sys.path[0], 'Figure_a.pdf')
 plt.savefig(save_name, dpi=600, format='pdf', bbox_inches='tight', pad_inches=0.01, transparent=True)

@@ -1,76 +1,106 @@
-import networkx as nx
-import numpy as np
 import os
 import sys
 import pickle
-import matplotlib.pyplot as plt
+from typing import Dict, Any, Tuple
 
+import numpy as np
+import networkx as nx
 import rewiring_package as rp
-                
-def save_data(folder, data_dict):
-    with open(folder + "data_dict" + '.pkl', 'wb') as f:
-        pickle.dump(data_dict, f)
 
-def create_geometric_graph(num_nodes, radius):
+
+def load_data(path: str) -> Dict[str, Any]:
     """
-    Create a 2D geometric graph with periodic (cyclic) boundary conditions.
-    
-    Parameters:
-        num_nodes (int): Number of nodes in the graph.
-        radius (float): Maximum distance to connect nodes.
-        space_size (float): The width and height of the square space.
-        
+    Load a pickled data dictionary from disk.
+    """
+    with open(path, 'rb') as f:
+        return pickle.load(f)
+
+
+def save_data(path: str, data: Dict[str, Any]) -> None:
+    """
+    Ensure directory exists and save a pickled data dictionary.
+    """
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'wb') as f:
+        pickle.dump(data, f)
+
+
+def save_adjacency(path: str, adjacency: np.ndarray) -> None:
+    """
+    Ensure directory exists and save adjacency matrix as a NumPy .npy file.
+    """
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    np.save(path, adjacency)
+
+
+def create_geometric_graph(
+    num_nodes: int,
+    radius: float
+) -> Tuple[nx.Graph, Dict[int, Tuple[float, float]]]:
+    """
+    Create a 2D geometric graph with periodic boundary conditions.
+
     Returns:
-        G (networkx.Graph): The generated geometric graph with cyclic boundary conditions.
-        pos (dict): Dictionary of node positions.
+        G: the generated graph
+        pos: node positions in [0,1]x[0,1]
     """
-    # Initialize graph and node positions
     G = nx.Graph()
-    pos = {}
-
-    # Randomly place nodes in a square space [0, space_size] x [0, space_size]
     positions = np.random.rand(num_nodes, 2)
-    for i in range(num_nodes):
-        pos[i] = positions[i]
-        G.add_node(i)
+    pos = {i: tuple(positions[i]) for i in range(num_nodes)}
+    G.add_nodes_from(pos)
 
-    # Add edges with cyclic boundary conditions
     for i in range(num_nodes):
         for j in range(i + 1, num_nodes):
-            # Calculate Euclidean distance considering cyclic boundaries
-            dx = np.abs(pos[i][0] - pos[j][0])
-            dy = np.abs(pos[i][1] - pos[j][1])
-
-            # Wrap distances if nodes are across boundaries
+            dx = abs(pos[i][0] - pos[j][0])
+            dy = abs(pos[i][1] - pos[j][1])
             dx = min(dx, 1 - dx)
             dy = min(dy, 1 - dy)
-
-            distance = np.sqrt(dx**2 + dy**2)
-
-            # Add an edge if distance is within the radius
-            if distance <= radius:
+            if np.hypot(dx, dy) <= radius:
                 G.add_edge(i, j)
 
     return G, pos
 
-if __name__ == "__main__":
+
+def generate_and_save_networks(
+    size: int,
+    mean_degree: float,
+    output_dir: str
+) -> None:
+    """
+    Generate various network types and save their adjacency matrices.
+    """
+    types = {
+        'random_geometric': lambda: create_geometric_graph(
+            num_nodes=size,
+            radius=np.sqrt(mean_degree / (np.pi * (size - 1)))
+        )[0],
+        'random_regular': lambda: rp.random_regular(n=size, k=int(mean_degree)),
+        'erdos_renyi': lambda: rp.erdos_renyi(n=size, p=mean_degree / (size - 1)),
+        'watts_strogatz': lambda: rp.watts_strogatz(n=size, k=int(mean_degree), p=0.1),
+        'barabasi_albert': lambda: rp.barabasi_albert(size=size, m=int(mean_degree // 2))
+    }
+
+    base = output_dir or sys.path[0]
+    net_dir = os.path.join(base, 'networks')
+
+    for name, constructor in types.items():
+        G = constructor()
+        adj = nx.adjacency_matrix(G).toarray()
+        file_path = os.path.join(net_dir, f"{name}.npy")
+        save_adjacency(file_path, adj)
+        print(f"Saved {name} adjacency to {file_path}")
+
+
+def main():
+    """
+    Entry point: configure parameters and generate networks.
+    """
     size = 100
-    d_mean = 4
+    mean_degree = 4
+    output_dir = sys.path[0]
 
-    G, pos = create_geometric_graph(size, radius=np.sqrt(d_mean / (np.pi*(size-1))))
-    G = rp.random_regular(size, d_mean)
-    G = rp.erdos_renyi(size, p=d_mean / (size - 1))
-    G = rp.watts_strogatz(n=size, k=d_mean, p=0.1)
+    generate_and_save_networks(size, mean_degree, output_dir)
 
-    # Save adjacency matrices as numpy arrays
-    random_geometric = nx.adjacency_matrix(G).todense()
-    np.save(os.path.join(sys.path[0], "networks/random_geometric.npy"), random_geometric)
 
-    random_regular = nx.adjacency_matrix(rp.random_regular(size, d_mean)).todense()
-    np.save(os.path.join(sys.path[0], "networks/random_regular.npy"), random_regular)
-
-    erdos_renyi = nx.adjacency_matrix(rp.erdos_renyi(size, p=d_mean / (size - 1))).todense()
-    np.save(os.path.join(sys.path[0], "networks/erdos_renyi.npy"), erdos_renyi)
-
-    watts_strogatz = nx.adjacency_matrix(rp.watts_strogatz(n=size, k=d_mean, p=0.1)).todense()
-    np.save(os.path.join(sys.path[0], "networks/watts_strogatz.npy"), watts_strogatz)
+if __name__ == '__main__':
+    main()

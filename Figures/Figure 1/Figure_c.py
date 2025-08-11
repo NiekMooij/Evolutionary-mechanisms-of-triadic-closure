@@ -23,7 +23,7 @@ cud_palette = [
 ]
 markers = ['s', 'o', '^', 'X', 'p', 'P']
 edgecolor = 'black'
-line_width = 2.5
+line_width = 2
 x = np.arange(1001)
 marker_size = 80
 marker_linewidth = 0.3
@@ -32,7 +32,9 @@ load_name = os.path.join(sys.path[0], 'data.pkl')
 with open(load_name, 'rb') as f:
     data = pickle.load(f)
 
-edges_start = data['edges'][-1]
+edges_start = data['edges'][20]
+c = data['clustering_arr'][20]
+
 G = nx.Graph()
 G.add_edges_from(edges_start)
 
@@ -51,7 +53,41 @@ for node in G:
         
 pos = nx.spring_layout(G)
 
-nx.draw(G, pos=pos, ax=ax, with_labels=False, node_color=node_colors, node_size=500, edgecolors=edgecolor, width=line_width)
+# --- Make triangle edges thicker ---
+triangle_edges = set()
+for u, v in G.edges():
+    # If u and v have any common neighbor, edge (u,v) is part of a triangle
+    if set(G.neighbors(u)).intersection(G.neighbors(v)):
+        triangle_edges.add(frozenset((u, v)))
+
+edges = list(G.edges())
+triangle_line_width = 4.5  # thicker width for triangle edges
+edge_widths = [
+    triangle_line_width if frozenset(e) in triangle_edges else line_width
+    for e in edges
+]
+
+# Define edge colors with less opacity for non-triangle edges
+triangle_edge_color = 'black'
+non_triangle_edge_color = (0, 0, 0, 0.65)  # RGBA with lower alpha for transparency
+edge_colors = [
+    triangle_edge_color if frozenset(e) in triangle_edges else non_triangle_edge_color
+    for e in edges
+]
+# --- end triangle-thickening block ---
+
+nx.draw(
+    G,
+    pos=pos,
+    ax=ax,
+    with_labels=False,
+    node_color=node_colors,
+    node_size=500,
+    edgelist=edges,              # ensure width order matches these edges
+    width=edge_widths,           # thicker for triangle edges
+    edgecolors=edgecolor,
+    edge_color=edge_colors       # set the color of the edges
+)
 
 save_name = os.path.join(sys.path[0], 'Figure_c.pdf')
 plt.savefig(save_name, dpi=600, format='pdf', bbox_inches='tight', pad_inches=0.1, transparent=True)

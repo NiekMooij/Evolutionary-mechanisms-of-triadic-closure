@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Three-panel figure for publication (Nature-style):
+Build a three-panel figure:
 
-Panel a: Histogram of interaction strengths (standard Matplotlib blue)
-Panel b: Realized network from adjacency matrix (nodes coloured & sized by degree)
-Panel c: ΔC vs Δτ scatter for multiple environments
+Panel a: Histogram of interaction strengths
+Panel b: Network from an adjacency matrix (nodes colored & sized by degree)
+Panel c: ΔC vs Δτ scatter across multiple environments
 
 Outputs:
   - combined_figure.png
@@ -18,18 +18,16 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.cm import ScalarMappable
 
-# ============================================================
-# ===================== USER PARAMETERS =======================
-# ============================================================
+# =========================
+# User parameters
+# =========================
 
-# Files for panels a & b
+# Panels a & b inputs
 ADJACENCY_FNAME = "R1_NP_001_adjacency.csv"
 INTERACTION_FNAME = "R1_NP_001_interaction_full.csv"
 
-# Map variable labels to CSV paths (panel c)
+# Panel c inputs
 DATA_FILES = {
     "N1": Path("data/N1_NP_measure_summary.csv"),
     "Q2": Path("data/Q2_NP_measure_summary.csv"),
@@ -40,15 +38,14 @@ DATA_FILES = {
     "S9": Path("data/S9_NP_measure_summary.csv"),
 }
 
-# Output for the combined 3-panel figure
+# Output
 COMBINED_OUTPUT = Path("combined_figure.png")
 
-POINT_SIZE = 18         # marker area for panel c
+POINT_SIZE = 18
 ALPHA = 0.85
 CI_Z = 1.96
 DPI = 600
 
-# Colour palette for panel c
 PALETTE = [
     "#4C72B0",  # N1
     "#DD8452",  # Q2
@@ -63,67 +60,63 @@ MARKERS = ["o", "s", "D", "^", "v", "P", "X"]
 
 ERROR_COLOR = "0.6"
 
-# Histogram colour: standard Matplotlib blue
 HIST_COLOR = "#1f77b4"
 HIST_EDGE_COLOR = "white"
 
-# Network edge colour
 NET_EDGE_COLOR = "0.6"
 
-# ============================================================
-# ==================== GLOBAL STYLE SETUP ====================
-# ============================================================
+# =========================
+# Global style
+# =========================
 
-plt.rcParams.update({
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Arial"],
-    "font.size": 7,
-    "axes.linewidth": 0.6,
-    "axes.labelsize": 7,
-    "axes.titlesize": 7,
-    "xtick.labelsize": 6,
-    "ytick.labelsize": 6,
-    "xtick.direction": "in",
-    "ytick.direction": "in",
-    "xtick.major.size": 3,
-    "ytick.major.size": 3,
-    "xtick.major.width": 0.6,
-    "ytick.major.width": 0.6,
-    "xtick.minor.visible": False,
-    "ytick.minor.visible": False,
-    "savefig.dpi": DPI,
-    "savefig.bbox": "tight",
-    "savefig.transparent": True,
-    "axes.spines.top": True,
-    "axes.spines.right": True,
-})
+plt.rcParams.update(
+    {
+        "font.family": "sans-serif",
+        "font.sans-serif": ["Arial"],
+        "font.size": 7,
+        "axes.linewidth": 0.6,
+        "axes.labelsize": 7,
+        "axes.titlesize": 7,
+        "xtick.labelsize": 6,
+        "ytick.labelsize": 6,
+        "xtick.direction": "in",
+        "ytick.direction": "in",
+        "xtick.major.size": 3,
+        "ytick.major.size": 3,
+        "xtick.major.width": 0.6,
+        "ytick.major.width": 0.6,
+        "xtick.minor.visible": False,
+        "ytick.minor.visible": False,
+        "savefig.dpi": DPI,
+        "savefig.bbox": "tight",
+        "savefig.transparent": True,
+        "axes.spines.top": True,
+        "axes.spines.right": True,
+    }
+)
 
-# ============================================================
-# ================= PANEL a: HISTOGRAM =======================
-# ============================================================
+# =========================
+# Panel a: histogram
+# =========================
+
 
 def plot_interaction_histogram(ax, fname: str) -> None:
     df = pd.read_csv(fname)
-    numeric_df = df.select_dtypes(include="number")
-    values = numeric_df.to_numpy().ravel()
-    values = values[~np.isnan(values)]
+    numeric = df.select_dtypes(include="number")
+    vals = numeric.to_numpy().ravel()
+    vals = vals[~np.isnan(vals)]
 
-    # Draw histogram and get patches
     n, bins, patches = ax.hist(
-        values,
+        vals,
         bins=25,
         color=HIST_COLOR,
         edgecolor=HIST_EDGE_COLOR,
         linewidth=0.2,
     )
 
-    # Give all bins with centers < 0.9 a lower opacity
     for left, right, patch in zip(bins[:-1], bins[1:], patches):
         center = 0.5 * (left + right)
-        if center < 0.9:
-            patch.set_alpha(0.35)
-        else:
-            patch.set_alpha(1.0)
+        patch.set_alpha(0.35 if center < 0.9 else 1.0)
 
     ax.set_xlabel("Interaction strength")
     ax.set_ylabel("Frequency")
@@ -131,25 +124,20 @@ def plot_interaction_histogram(ax, fname: str) -> None:
     ax.tick_params(axis="y", pad=2)
 
 
-# ============================================================
-# ================= PANEL b: NETWORK =========================
-# ============================================================
+# =========================
+# Panel b: network
+# =========================
+
 
 def plot_realized_network(ax, fname: str) -> None:
-    """
-    Plot realized network (from adjacency matrix) on the given axes.
-
-    - Layout: Kamada–Kawai (spreads in 2D) + strong jitter to avoid “line” artefacts.
-    - Nodes coloured & sized by degree (viridis).
-    """
     df = pd.read_csv(fname, header=None)
 
     labels = df.iloc[0, 1:].tolist()
     matrix = df.iloc[1:, 1:].astype(float).to_numpy()
 
     G = nx.Graph()
-    for label in labels:
-        G.add_node(label)
+    for lab in labels:
+        G.add_node(lab)
 
     n = len(labels)
     for i in range(n):
@@ -162,15 +150,12 @@ def plot_realized_network(ax, fname: str) -> None:
         ax.set_axis_off()
         return
 
-    # Kamada–Kawai layout: good global spacing
     pos = nx.kamada_kawai_layout(G)
 
-    # Strong jitter to make nodes clearly 2D, not collinear
     jitter = 0.25
     for node in pos:
         pos[node] = pos[node] + jitter * np.random.randn(2)
 
-    # Degree-based colour and size
     nodes = list(G.nodes())
     degrees = np.array([G.degree(node) for node in nodes], dtype=float)
     if degrees.size == 0:
@@ -179,19 +164,23 @@ def plot_realized_network(ax, fname: str) -> None:
 
     dmin, dmax = degrees.min(), degrees.max()
     if dmax == dmin:
-        dmax = dmin + 1.0  # avoid zero-range
+        dmax = dmin + 1.0
 
     norm = plt.Normalize(vmin=dmin, vmax=dmax)
     cmap = plt.cm.viridis
     node_colors = cmap(norm(degrees))
 
-    # Node sizes: modest, narrow range to keep overlap low
     node_sizes = 12 + 24 * (degrees - dmin) / (dmax - dmin)
 
     ax.set_facecolor("white")
 
     nx.draw_networkx_edges(
-        G, pos, ax=ax, alpha=0.35, width=0.35, edge_color=NET_EDGE_COLOR
+        G,
+        pos,
+        ax=ax,
+        alpha=0.35,
+        width=0.35,
+        edge_color=NET_EDGE_COLOR,
     )
     nx.draw_networkx_nodes(
         G,
@@ -207,9 +196,10 @@ def plot_realized_network(ax, fname: str) -> None:
     ax.set_aspect("equal", adjustable="box")
 
 
-# ============================================================
-# ================= PANEL c: ΔC vs Δτ ========================
-# ============================================================
+# =========================
+# Panel c: ΔC vs Δτ
+# =========================
+
 
 def parse_list_column(col: pd.Series):
     return col.apply(lambda s: ast.literal_eval(s) if isinstance(s, str) else [])
@@ -222,10 +212,14 @@ def load_and_process(label: str, csv_path: Path) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
 
     required_cols = {
-        "original_clustering", "generated_mean_clustering",
-        "original_tau", "generated_mean_tau",
-        "clustering_ratio", "tau_ratio",
-        "generated_clustering_values", "generated_tau_values",
+        "original_clustering",
+        "generated_mean_clustering",
+        "original_tau",
+        "generated_mean_tau",
+        "clustering_ratio",
+        "tau_ratio",
+        "generated_clustering_values",
+        "generated_tau_values",
     }
     missing = required_cols - set(df.columns)
     if missing:
@@ -309,7 +303,6 @@ def plot_clustering_tau_panel(ax):
     ax.set_xlim(-0.06, 0.6)
     ax.set_ylim(-0.02, 0.14)
 
-    # Legend in bottom-left region, lifted above zero lines
     ax.legend(
         title=None,
         frameon=True,
@@ -321,20 +314,22 @@ def plot_clustering_tau_panel(ax):
         ncol=2,
         edgecolor="black",
         fancybox=False,
-        framealpha=0.9
+        framealpha=0.9,
     )
 
     ax.tick_params(axis="both", pad=2)
 
 
-# ============================================================
-# =================== PANEL LABEL HELPER =====================
-# ============================================================
+# =========================
+# Panel labels
+# =========================
+
 
 def add_panel_label(ax, label):
-    # Panel label inside axes, upper-left corner (same for all panels)
     ax.text(
-        0.035, 0.98, label,
+        0.035,
+        0.98,
+        label,
         transform=ax.transAxes,
         fontsize=8,
         fontweight="bold",
@@ -343,12 +338,12 @@ def add_panel_label(ax, label):
     )
 
 
-# ============================================================
-# =========================== MAIN ===========================
-# ============================================================
+# =========================
+# Main
+# =========================
+
 
 def main():
-    # Three equal-sized panels in one row
     fig, (ax1, ax2, ax3) = plt.subplots(
         1,
         3,
@@ -364,15 +359,12 @@ def main():
         wspace=0.35,
     )
 
-    # Panel a
     plot_interaction_histogram(ax1, INTERACTION_FNAME)
     add_panel_label(ax1, "a")
 
-    # Panel b (same label position as a and c)
     plot_realized_network(ax2, ADJACENCY_FNAME)
     add_panel_label(ax2, "b")
 
-    # Panel c
     plot_clustering_tau_panel(ax3)
     add_panel_label(ax3, "c")
 

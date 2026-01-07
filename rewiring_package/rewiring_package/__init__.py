@@ -11,11 +11,7 @@ from .generate_graphs.watts_strogatz import watts_strogatz
 
 from .get_first_bifurcation import get_first_bifurcation
 
-from .rewire import rewire_random_edges
-from .rewire import rewired_graph
-from .rewire import accept_rewire
-from .rewire import rewire_iteration
-from .rewire import network_cycle
+from .optimise_coupling import optimise_coupling
 from .optimise_clustering import optimise_clustering
 
 # Define the __all__ variable to specify what should be imported when using "from my_package import *".
@@ -28,10 +24,6 @@ __all__ = [
             'uniform_graph',
             'watts_strogatz',
             'get_first_bifurcation',
-            'rewire_random_edges',
-            'rewired_graph',
-            'accept_rewire',
-            'rewire_iteration',
-            'network_cycle',
+            'optimise_coupling',
             'optimise_clustering'
            ]
